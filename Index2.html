@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Phase Space Simulation - Two Particle System</title>
+
+<style>
+    :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --accent: #38bdf8;
+        --green: #4ade80;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: #334155;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    header h1 {
+        color: var(--accent);
+        margin-bottom: 8px;
+    }
+
+    header p {
+        color: var(--muted);
+        margin-top: 0;
+    }
+
+    .main {
+        max-width: 1300px;
+        margin: auto;
+    }
+
+    .controls {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+    }
+
+    .controls h2 {
+        color: var(--accent);
+        margin-top: 0;
+    }
+
+    .control-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .control label {
+        display: block;
+        color: var(--muted);
+        margin-bottom: 8px;
+    }
+
+    input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+    }
+
+    .value {
+        color: var(--accent);
+        font-weight: bold;
+    }
+
+    .simulation {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid var(--border);
+    }
+
+    .card h2 {
+        color: var(--accent);
+        font-size: 1.2rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+    }
+
+    canvas {
+        width: 100%;
+        background: #020617;
+        border-radius: 8px;
+        display: block;
+    }
+
+    .equations {
+        margin-top: 20px;
+        background: #020617;
+        border-radius: 10px;
+        padding: 18px;
+        line-height: 1.9;
+    }
+
+    .equation {
+        color: #e2e8f0;
+        font-size: 1.05rem;
+        margin: 5px 0;
+    }
+
+    .highlight {
+        color: var(--green);
+        font-weight: bold;
+    }
+
+    .info {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .info-box {
+        background: #0f172a;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .info-box strong {
+        color: var(--accent);
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .status {
+        margin-top: 15px;
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+        .simulation {
+            grid-template-columns: 1fr;
+        }
+
+        .control-grid,
+        .info {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="main">
+
+<header>
+    <h1>Phase Space of a Two-Particle System</h1>
+    <p>Two particles of mass m constrained to move on a line of length L</p>
+</header>
+
+<!-- CONTROLS -->
+<div class="controls">
+
+    <h2>System Parameters</h2>
+
+    <div class="control-grid">
+
+        <div class="control">
+            <label>
+                Line Length L =
+                <span class="value" id="LValue">10</span>
+            </label>
+
+            <input
+                type="range"
+                id="L"
+                min="2"
+                max="20"
+                step="1"
+                value="10">
+        </div>
+
+        <div class="control">
+            <label>
+                Particle Mass m =
+                <span class="value" id="mValue">1</span>
+            </label>
+
+            <input
+                type="range"
+                id="mass"
+                min="0.5"
+                max="5"
+                step="0.5"
+                value="1">
+        </div>
+
+        <div class="control">
+            <label>
+                Total Energy E₀ =
+                <span class="value" id="EValue">10</span>
+            </label>
+
+            <input
+                type="range"
+                id="energy"
+                min="1"
+                max="50"
+                step="1"
+                value="10">
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- SIMULATION -->
+<div class="simulation">
+
+    <!-- CONFIGURATION SPACE -->
+    <div class="card">
+
+        <h2>1. Configuration Space</h2>
+
+        <canvas id="configurationCanvas"
+                width="500"
+                height="500"></canvas>
+
+        <div class="status">
+            Coordinates:
+            <strong>(x₁, x₂)</strong>
+        </div>
+
+        <div class="equations">
+
+            <div class="equation">
+                0 ≤ x₁ ≤ L
+            </div>
+
+            <div class="equation">
+                0 ≤ x₂ ≤ L
+            </div>
+
+            <div class="equation">
+                <span class="highlight">
+                    Configuration Space = L²
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- MOMENTUM SPACE -->
+    <div class="card">
+
+        <h2>2. Momentum Space</h2>
+
+        <canvas id="momentumCanvas"
+                width="500"
+                height="500"></canvas>
+
+        <div class="status">
+            Coordinates:
+            <strong>(p₁, p₂)</strong>
+        </div>
+
+        <div class="equations">
+
+            <div class="equation">
+                E₀ =
+                p₁²/(2m) + p₂²/(2m)
+            </div>
+
+            <div class="equation">
+                p₁² + p₂² = 2mE₀
+            </div>
+
+            <div class="equation">
+                R = √(2mE₀) =
+                <span class="highlight" id="radiusValue">
+                    4.47
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- INFORMATION -->
+<div class="card" style="margin-top:20px">
+
+    <h2>3. Complete Phase Space</h2>
+
+    <div class="equations">
+
+        <div class="equation">
+            Phase-space coordinates:
+            <span class="highlight">
+                (x₁, x₂, p₁, p₂)
+            </span>
+        </div>
+
+        <div class="equation">
+            Configuration-space dimension = 2
+        </div>
+
+        <div class="equation">
+            Momentum-space dimension = 2
+        </div>
+
+        <div class="equation">
+            <span class="highlight">
+                Total Phase-space dimension = 4
+            </span>
+        </div>
+
+        <div class="equation">
+            Constant-energy phase space:
+            <span class="highlight">
+                [0,L]² × Circle(R)
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="info">
+
+        <div class="info-box">
+            <strong>Configuration Space</strong>
+            Each particle has one position coordinate.
+            Therefore x₁ and x₂ form a 2D square.
+        </div>
+
+        <div class="info-box">
+            <strong>Momentum Space</strong>
+            The energy condition produces a circle in
+            the p₁-p₂ plane.
+        </div>
+
+        <div class="info-box">
+            <strong>Phase Space</strong>
+            The complete state requires four coordinates:
+            x₁, x₂, p₁ and p₂.
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const configCanvas =
+    document.getElementById("configurationCanvas");
+
+const momentumCanvas =
+    document.getElementById("momentumCanvas");
+
+const configCtx =
+    configCanvas.getContext("2d");
+
+const momentumCtx =
+    momentumCanvas.getContext("2d");
+
+
+const LInput =
+    document.getElementById("L");
+
+const massInput =
+    document.getElementById("mass");
+
+const energyInput =
+    document.getElementById("energy");
+
+
+const LValue =
+    document.getElementById("LValue");
+
+const mValue =
+    document.getElementById("mValue");
+
+const EValue =
+    document.getElementById("EValue");
+
+const radiusValue =
+    document.getElementById("radiusValue");
+
+
+let angle = 0;
+
+
+/* =========================
+   UPDATE VALUES
+========================= */
+
+function updateValues() {
+
+    const L =
+        parseFloat(LInput.value);
+
+    const m =
+        parseFloat(massInput.value);
+
+    const E =
+        parseFloat(energyInput.value);
+
+    LValue.textContent = L;
+    mValue.textContent = m;
+    EValue.textContent = E;
+
+    const R =
+        Math.sqrt(2 * m * E);
+
+    radiusValue.textContent =
+        R.toFixed(2);
+}
+
+
+/* =========================
+   CONFIGURATION SPACE
+========================= */
+
+function drawConfigurationSpace() {
+
+    const ctx = configCtx;
+
+    const W = configCanvas.width;
+    const H = configCanvas.height;
+
+    const L =
+        parseFloat(LInput.value);
+
+    ctx.clearRect(0,0,W,H);
+
+    /* Background */
+
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0,0,W,H);
+
+
+    const margin = 60;
+
+    const size =
+        Math.min(W,H) - 2*margin;
+
+
+    /* Grid */
+
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1;
+
+    for(let i=0;i<=10;i++){
+
+        const x =
+            margin + size*i/10;
+
+        const y =
+            margin + size*i/10;
+
+        ctx.beginPath();
+        ctx.moveTo(x,margin);
+        ctx.lineTo(x,margin+size);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(margin,y);
+        ctx.lineTo(margin+size,y);
+        ctx.stroke();
+    }
+
+
+    /* Square */
+
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 3;
+
+    ctx.strokeRect(
+        margin,
+        margin,
+        size,
+        size
+    );
+
+
+    /* Axis labels */
+
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "16px Arial";
+
+    ctx.fillText(
+        "x₁",
+        margin + size - 5,
+        margin + size + 35
+    );
+
+    ctx.fillText(
+        "x₂",
+        margin - 35,
+        margin + 5
+    );
+
+
+    ctx.fillText(
+        "0",
+        margin - 15,
+        margin + size + 5
+    );
+
+    ctx.fillText(
+        "L",
+        margin + size - 5,
+        margin + size + 20
+    );
+
+    ctx.fillText(
+        "L",
+        margin - 25,
+        margin + 5
+    );
+
+
+    /* Moving state point */
+
+    const x1 =
+        (Math.sin(angle) + 1)/2;
+
+    const x2 =
+        (Math.cos(angle) + 1)/2;
+
+
+    const px =
+        margin + x1*size;
+
+    const py =
+        margin + (1-x2)*size;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        px,
+        py,
+        8,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle = "#4ade80";
+    ctx.fill();
+
+
+    /* State label */
+
+    ctx.fillStyle = "#4ade80";
+    ctx.font = "14px Arial";
+
+    ctx.fillText(
+        "Current (x₁,x₂)",
+        px + 12,
+        py
+    );
+}
+
+
+/* =========================
+   MOMENTUM SPACE
+========================= */
+
+function drawMomentumSpace() {
+
+    const ctx = momentumCtx;
+
+    const W = momentumCanvas.width;
+    const H = momentumCanvas.height;
+
+    const m =
+        parseFloat(massInput.value);
+
+    const E =
+        parseFloat(energyInput.value);
+
+    const R =
+        Math.sqrt(2*m*E);
+
+
+    ctx.clearRect(0,0,W,H);
+
+
+    /* Background */
+
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0,0,W,H);
+
+
+    const cx = W/2;
+    const cy = H/2;
+
+    const displayRadius = 170;
+
+
+    /* Axes */
+
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(40,cy);
+    ctx.lineTo(W-40,cy);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx,40);
+    ctx.lineTo(cx,H-40);
+    ctx.stroke();
+
+
+    /* Energy circle */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        displayRadius,
+        0,
+        Math.PI*2
+    );
+
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 3;
+
+    ctx.stroke();
+
+
+    /* Fill inside circle */
+
+    ctx.fillStyle =
+        "rgba(56,189,248,0.08)";
+
+    ctx.fill();
+
+
+    /* Axis labels */
+
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "16px Arial";
+
+    ctx.fillText(
+        "p₁",
+        W-45,
+        cy-10
+    );
+
+    ctx.fillText(
+        "p₂",
+        cx+10,
+        35
+    );
+
+
+    /* Animated point */
+
+    const px =
+        cx + displayRadius*Math.cos(angle);
+
+    const py =
+        cy - displayRadius*Math.sin(angle);
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        px,
+        py,
+        8,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle = "#4ade80";
+    ctx.fill();
+
+
+    /* Radius line */
+
+    ctx.beginPath();
+
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(px,py);
+
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 2;
+
+    ctx.stroke();
+
+
+    /* Radius label */
+
+    ctx.fillStyle = "#4ade80";
+    ctx.font = "14px Arial";
+
+    ctx.fillText(
+        "R = √(2mE₀)",
+        cx + 15,
+        cy - 15
+    );
+
+
+    /* Center */
+
+    ctx.fillStyle = "#f8fafc";
+
+    ctx.fillText(
+        "0",
+        cx + 8,
+        cy + 18
+    );
+}
+
+
+/* =========================
+   ANIMATION
+========================= */
+
+function animate() {
+
+    angle += 0.02;
+
+    updateValues();
+
+    drawConfigurationSpace();
+
+    drawMomentumSpace();
+
+    requestAnimationFrame(animate);
+}
+
+
+animate();
+
+</script>
+
+</body>
+  </html>
